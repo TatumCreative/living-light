@@ -17,7 +17,7 @@ var Dotenv = require('dotenv')
 	//Start the server
 	var port   = process.env.PORT || 8765
 	var server = Http.createServer(app)
-	var io = SocketIO(server);
+	var io     = SocketIO(server);
 
 	server.listen(port, function() {
 		console.log('Living light server listening at: ' + process.env.WEBSITE_URL)

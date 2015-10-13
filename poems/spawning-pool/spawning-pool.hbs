@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>{{title}}</title>
+
+	<link href='http://fonts.googleapis.com/css?family=Roboto:400,500,700,300,100' rel='stylesheet' type='text/css' />
+	<link href='/common/css/poem-base.css?v={{version}}' rel='stylesheet' type='text/css' />
+	<link href='spawning-pool.css?v={{version}}' rel='stylesheet' type='text/css' />
+	
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	{{#if screenshot}}<meta property="og:image" content="{{screenshot}}" />{{/if}}
+	{{#if description}}<meta name="description" content="{{description}}" />{{/if}}
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	
+	<script type="text/javascript">
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-3859613-1']);
+
+		(function() {
+		var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
+	</script>
+	
+</head>
+<body>
+		
+	<div class='container' id='container'>
+
+		<div class='title-webgl-error'>
+			<p>Sorry, it looks like WebGL is not supported by your browser or graphics card.</p>
+			<p><a href='http://get.webgl.org/'>Find out more about WebGL support here.</a></p>
+		</div>
+		
+		<div class='container-blocker' id='container-blocker'></div>
+		
+		<div class='titles'>
+			<h1>Spawning Pool</h1>
+			<h2>Living Light</h2>
+		</div>
+		<div class='code-yours'>
+			<div class='code-yours-inner'>
+				<div class='code-yours-number'>...</div>
+				<div class='code-yours-subtext'>code</div>
+			</div>
+		</div>
+		<div class='cta-link'>
+			<span>goto:</span>
+			<a href='http://poem.gregtatum.com'>poem.gregtatum.com</a>
+		</div>
+	</div>
+
+	<script src="/socket.io/socket.io.js"></script>
+	<script src='/common/vendor/jquery-2.1.1.min.js'></script>
+	<script src='/common/vendor/three.js'></script>
+	<script src='/common/vendor/lodash.min.js'></script>
+	
+	<!-- Looking for the source code? Check it out here: https://github.com/TatumCreative/living-light -->
+	{{#if script}}<script src='{{script}}'></script>{{/if}}
+	
+</body>
+</html>

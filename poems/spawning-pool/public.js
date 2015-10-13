@@ -1,15 +1,12 @@
-console.log('hello world')
-
-var EventEmitter   = require('events').EventEmitter
-var Manifest       = require('./manifest');
-var ManifestToPoem = require('../common/core/manifestToPoem')
-var CreatePoem     = require('../common/core/poem')
+var Manifest        = require('./manifest');
+var ManifestToPoem  = require('../common/core/manifestToPoem')
+var CreatePoem      = require('../common/core/poem')
+var StartWebSockets = require('../common/websockets')
 
 ;(function createPoem() {
 
-	var emitter = new EventEmitter()
-
 	ManifestToPoem.init( CreatePoem, { poem: Manifest } )
-	ManifestToPoem.load( "poem" )
+	// ManifestToPoem.load( "poem" )
+	StartWebSockets()
 
 })()

@@ -1,7 +1,7 @@
 var Handlebars = require('handlebars')
 var Express = require('express')
 var PoemTemplate = Handlebars.compile(
-	require('fs').readFileSync(process.cwd() + '/app/templates/poem.hbs', 'utf8')
+	require('fs').readFileSync( __dirname + '/spawning-pool.hbs', 'utf8' )
 )
 
 module.exports = function() {
