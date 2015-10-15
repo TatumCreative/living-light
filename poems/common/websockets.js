@@ -1,36 +1,65 @@
 var EventEmitter = require('events').EventEmitter
-module.exports = function setupClientIOConnection() {
-	
-	var emitter = new EventEmitter()
-	var current = {}
-	var socket = socket = io("http://local.poem.gregtatum.com:8765/io")
+var CurrentState = require('@tatumcreative/current-state')
+
+
+
+function _setSocketEvents( socket, state ) {
 	
 	socket.on('connect', function() {
-		socket.emit("setPoem", current.code)
+		console.log('connected')
+		
+		socket.emit("setPoem", state.get("myCode") )
+		state.set({
+			isConnected : true,
+			connectionRequestSent: true,
+			connectionError : false,
+		})
 	})
 	
 	socket.on('disconnect', function() {
-		$('.code-yours-number').text( "..." )
-		$('.code-status').text( "Disconnected" )
+	
+		state.set({
+			isConnected : false,
+			connectionError : false,
+			theirCode : null,
+			myCode : null,
+			connectionRequestSent : false
+		})
 	})
 	
 	socket.on('connect_error', function(err) {
-		$('.code-status').text( "Connection Error" )
+		state.set({
+			connectionError: true
+		})
 	})
 	
 	socket.on("setPoem", function( code ) {
-		current.code = code
-		$('.code-yours-number').text( code )
-		$('.code-status').text( "Type Here" )
+		console.log('setPoem', code)
+		state.set("myCode", code)
 	})
 	
 	socket.on('tap', function() {
 		console.log('tap')
 	})
+}
+
+module.exports = function setupClientIOConnection() {
+	
+	var socket = socket = io("http://local.poem.gregtatum.com:8765/io")
+
+	var state = CurrentState({
+		isConnected : false,
+		connectionError : false,
+		codeTypedComplete : false,
+		theirCode : null,
+		myCode : null,
+		connectionRequestSent : false
+	})
+	
+	_setSocketEvents( socket, state )
 	
 	return {
-		emitter : emitter,
-		current : current,
+		state : state,
 		socket : socket
 	}
 }

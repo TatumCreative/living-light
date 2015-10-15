@@ -11,8 +11,6 @@ var UiController    = require('./ui-controller')
 	// ManifestToPoem.load( "poem" )
 	var websockets = StartWebSockets()
 	
-	UiController(
-		websockets.socket, websockets.current
-	)
+	UiController( websockets.socket, websockets.state )
 	
 })()

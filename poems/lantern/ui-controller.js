@@ -8,7 +8,7 @@ function _numbersOnly( text ) {
 	return digits.join('')
 }
 
-function _manageCodeInput( $input, $status, current, onTypeInCompleteCode ) {
+function _manageCodeInput( $input, $status, state, onTypeInCompleteCode ) {
 	
 	$input.on('focus', function() {
 		if( $input.val() === "..." ) {
@@ -34,9 +34,13 @@ function _manageCodeInput( $input, $status, current, onTypeInCompleteCode ) {
 				currText = prevText
 			}
 		
-			current.poemCode = null
 			$status.text("Type Here")
 		
+			state.set({
+				theirCode: null,
+				codeTypedComplete : (currText.length === 3)
+			})
+			
 			if( currText.length === 3 ) {
 				onTypeInCompleteCode( currText )
 			}
@@ -48,7 +52,7 @@ function _manageCodeInput( $input, $status, current, onTypeInCompleteCode ) {
 	})
 }
 
-function _onTypeInCompleteCode( socket, $codeInput, $status, current ) {
+function _onTypeInCompleteCode( socket, $codeInput, $status, state ) {
 	
 	return function onTypeInCompleteCode( poemCode ) {
 		
@@ -64,30 +68,77 @@ function _onTypeInCompleteCode( socket, $codeInput, $status, current ) {
 					
 					console.log('Connecting to poem', connectedToCode)
 					
-					$status.text("Connected")
-					current.poemCode = connectedToCode
+					state.set('theirCode', connectedToCode)
 				}
 			}
 		})
 	}
 }
 
-module.exports = function lanternUiController( socket, current ) {
+function _updateStatusMessageFn() {
+	
+	var $myCode            = $('.code-yours-number')
+	var $status            = $('.code-status')
+	var $theirCodeWrapper  = $('.code-poem-inner')
+	
+	return function updateStatusMessage( current ) {
+	
+		console.log(current)
+		
+		var fullyConnected = false
+	
+		if( current.isConnected ) {
+		
+			if( current.myCode !== null ) {
+			
+				$myCode.text( current.myCode )
+			
+				if( current.theirCode !== null ) {
+					$status.text( "Connected" )
+				} else {
+					$status.text( "Type Connection Code Here" )
+				}
+			} else {
+				$status.text( "Connecting" )
+				$myCode.text( "..." )
+			}
+		
+		} else {
+			if( current.connectionError ) {
+				$status.text( "Connection Error" )
+			} else {
+				$status.text( "Disconnected" )
+			}
+			$myCode.text( "..." )
+		}
+		
+		$theirCodeWrapper.toggleClass( 'connected', fullyConnected )
+	}
+}
+
+
+module.exports = function lanternUiController( socket, state ) {
 	
 	var $codeInput = $('.code-poem-number')
 	var $status = $('.code-status')
+	
+	// state.on('change', _updateStatusMessageFn())
+	state.emitter.on('change', function() {
+		console.log('change')
+	})
+
 	
 	var onTypeInCompleteCode = _onTypeInCompleteCode(
 		socket,
 		$codeInput,
 		$status,
-		current
+		state
 	)
 	
 	_manageCodeInput(
 		$codeInput,
 		$status,
-		current,
+		state,
 		onTypeInCompleteCode
 	)
 }

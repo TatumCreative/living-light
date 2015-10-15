@@ -94,6 +94,7 @@
 	text-align:center;
 	overflow:hidden;
 	box-shadow: inset 0.2em 0.3em 0.4em rgba(0,0,0,0.3);
+	transition: background-color 500ms;
 }
 .code-poem-number {
     font-weight: 800;
@@ -135,4 +136,11 @@
 	border-bottom:none;
 	transform: rotate(45deg);
 	margin-top:0.1em;
+}
+.code-poem-inner.connected {
+	background-color: rgb(48, 248, 255);
+}
+.code-poem-inner.connected .code-poem-number,
+.code-poem-inner.connected .code-poem-subtext {
+	color: #333;
 }
