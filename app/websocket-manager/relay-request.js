@@ -75,14 +75,20 @@ module.exports = function createRelayRequest( requestName, fromSocket, toSocket,
 		to : toSocket
 	}
 	
-	sockets.from.on( names.request, _sendFn(
+	var send = _sendFn(
 		names,
 		sockets,
 		unresolvedRequests,
 		callback
-	))
+	)
 	
-	sockets.to.on( names.response , _receiveFn(
-		unresolvedRequests
-	))
+	var receive = _receiveFn( unresolvedRequests )
+	
+	sockets.from.on( names.request, send )
+	sockets.to.on( names.response, receive )
+	
+	return function disconnectRelayRequest() {
+		sockets.from.removeListener( names.request, send )
+		sockets.to.removeListener( names.response, receive )
+	}
 }

@@ -39,13 +39,26 @@ function _setPoemFn( socket, poemManager ) {
 
 function _setClientFn( socket, poemManager ) {
 	
+	var poem, client
+	
+	function tryToRemoveClient() {
+		if( poem && client ) {
+			poem.removeClient( client )
+			client = null
+			console.log('ws-manager: Removed client from poem ' + poem.code)
+		}
+	}
+
+	socket.on( 'removeClient', tryToRemoveClient)
+	
 	return function setClient( code, result ) {
 		
-		var poem = poemManager.getPoemByCode( code )
+		tryToRemoveClient()
+		poem = poemManager.getPoemByCode( code )
 		
 		if( poem ) {
 			
-			var client = CreateClient( socket, poem )
+			client = CreateClient( socket, poem )
 			poem.addClient( client )
 			
 			result( code )
@@ -54,9 +67,12 @@ function _setClientFn( socket, poemManager ) {
 			
 		} else {
 			
-			result()
-			
-			console.log('ws-manager: Client could not find poem ' + code)
+			if( result ) {
+				result()
+			}
+			if( code ) {
+				console.log('ws-manager: Client could not find poem ' + code)
+			}
 		}
 	}
 }
@@ -74,6 +90,11 @@ module.exports = function createWebsocketManager( io, url ) {
 		))
 		
 		socket.on( 'setClient', _setClientFn(
+			socket,
+			poemManager
+		))
+		
+		socket.on( 'removeClient', _setClientFn(
 			socket,
 			poemManager
 		))

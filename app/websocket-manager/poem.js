@@ -4,19 +4,32 @@ function _addClient( clients, client ) {
 
 function _removeClient( clients, clientToRemove ) {
 	
-	var indexToRemove
+	var index = clients.indexOf( clientToRemove )
 	
-	var index = clients.indexOf( client )
-	
-	if( index > 0 ) {
+	if( index >= 0 ) {
 		clients.splice(index, 1)
+	}
+}
+
+function _removeClientBySocket( clients, socket ) {
+	
+	var client = _.find( clients, client => (client.socket === socket) )
+	
+	if( client ) {
+		client.destroy()
+		var index = clients.indexOf( client )
+		
+		if( index > 0 ) {
+			clients.splice(index, 1)
+		}
 	}
 }
 
 function _disconnect( clients, socket ) {
 	
 	clients.forEach(function( client ) {
-		client.disconnect()
+		client.socket.emit('removePoem')
+		client.destroy()
 	})
 	
 	// socket.close()

@@ -8,7 +8,7 @@ function _numbersOnly( text ) {
 	return digits.join('')
 }
 
-function _manageCodeInput( $input, $status, state, onTypeInCompleteCode ) {
+function _manageCodeInput( $input, $status, state, socket, onTypeInCompleteCode ) {
 	
 	$input.on('focus', function() {
 		
@@ -29,8 +29,9 @@ function _manageCodeInput( $input, $status, state, onTypeInCompleteCode ) {
 	
 	$input.on('keyup', function() {
 
-		var currText = _numbersOnly( $input.val() )
-
+		var inputText = $input.val()
+		var currText = _numbersOnly( inputText )
+		
 		if( currText !== prevText ) {
 
 			if( currText.length > 3 ) {
@@ -38,7 +39,11 @@ function _manageCodeInput( $input, $status, state, onTypeInCompleteCode ) {
 			}
 		
 			$status.text("Type Here")
-		
+			
+			if( currText.length !== 3 && prevText.length === 3 ) {
+				socket.emit('removeClient')
+			}
+			
 			state.set({
 				theirCode: null,
 				codeTypedComplete : (currText.length === 3)
@@ -47,9 +52,10 @@ function _manageCodeInput( $input, $status, state, onTypeInCompleteCode ) {
 			if( currText.length === 3 ) {
 				onTypeInCompleteCode( currText )
 			}
+			
 		}
 		
-		if( currText !== $input.val() ) {
+		if( currText !== inputText ) {
 			$input.val(currText)
 		}
 		prevText = currText
@@ -141,6 +147,7 @@ module.exports = function lanternUiController( socket, state ) {
 		$codeInput,
 		$status,
 		state,
+		socket,
 		onTypeInCompleteCode
 	)
 }

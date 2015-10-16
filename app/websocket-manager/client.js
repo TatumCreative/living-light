@@ -1,13 +1,10 @@
 var _ = require('lodash');
 var CreateRelayRequest = require('./relay-request');
 
-function _createMessageRelay( socket, poem ) {
-
-	CreateRelayRequest( "message", socket, poem.socket )
-}
-
 function _relayCallback( err, data, reply ) {
 
+	// what is this? can I delete it?
+	
 	if( err ) {
 
 		if(typeof callback === "function") {
@@ -28,22 +25,13 @@ function _relayCallback( err, data, reply ) {
 	})
 }
 
-function _disconnect( socket ) {
-	
-	socket.emit( "poemDisconnected", {
-		"message" : "The poem has been disconnected."
-	})
-	
-	socket.disconnect()
-}
 
 module.exports = function createClient( socket, poem ) {
 
-	socket.on( 'disconnect', _disconnect.bind(null, socket) )
-	
-	_createMessageRelay( socket, poem )
-	
+	var destroyRelay = CreateRelayRequest( "message", socket, poem.socket )
+
 	return {
-		disconnect : _disconnect.bind( null, socket )
+		socket : socket,
+		destroy : destroyRelay
 	}
 }

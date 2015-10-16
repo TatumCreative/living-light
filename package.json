@@ -6,11 +6,12 @@
   "scripts": {
     "start": "node --harmony app/server",
     "start:dev": "nodemon --debug --harmony -e js,hbs app/server",
+    "open:inspector": "open http://127.0.0.1:8080/debug?ws=127.0.0.1:8080&port=5858",
     "build:spawning": "./bin/browserify-poem.sh spawning-pool",
     "watch:spawning": "./bin/watchify-poem.sh spawning-pool",
     "build:lantern": "./bin/browserify-poem.sh lantern",
     "watch:lantern": "./bin/watchify-poem.sh lantern",
-    "watch": "parallelshell 'npm run start:dev' 'npm run watch:spawning' 'npm run watch:lantern'"
+    "watch": "parallelshell 'npm run start:dev' 'npm run watch:spawning' 'npm run watch:lantern' 'node-inspector'"
   },
   "author": "Greg Tatum",
   "license": "GPLv3",

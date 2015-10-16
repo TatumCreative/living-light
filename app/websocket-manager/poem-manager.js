@@ -47,6 +47,17 @@ function _countPoems( poems ) {
 	}, 0)
 }
 
+function _removeClient( poems, socket ) {
+	
+	for( var i=0; i < poems.length; i++ ) {
+		var poem = poems[i]
+		
+		if( poem ) {
+			poem.removeClientBySocket( socket )
+		}
+	}
+}
+
 module.exports = function createManager() {
 	
 	var poems = _.times(1000, () => null)
@@ -56,5 +67,6 @@ module.exports = function createManager() {
 		removePoem     : _removePoem    .bind(null, poems),
 		getPoemByCode  : _getPoemByCode .bind(null, poems),
 		countPoems     : _countPoems    .bind(null, poems),
+		removeClient   : _removeClient  .bind(null, poems),
 	}
 }

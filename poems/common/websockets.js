@@ -1,8 +1,6 @@
 var EventEmitter = require('events').EventEmitter
 var CurrentState = require('@tatumcreative/current-state')
 
-
-
 function _setSocketEvents( socket, state ) {
 	
 	socket.on('connect', function() {
@@ -34,8 +32,11 @@ function _setSocketEvents( socket, state ) {
 	})
 	
 	socket.on("setPoem", function( code ) {
-		console.log('setPoem', code)
 		state.set("myCode", code)
+	})
+	
+	socket.on("removePoem", function() {
+		state.set("theirCode", null)
 	})
 	
 	socket.on('tap', function() {
