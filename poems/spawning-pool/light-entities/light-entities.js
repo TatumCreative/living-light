@@ -160,7 +160,6 @@ function _updateFn( config, mesh, entities ) {
 				
 			}
 		}
-		console.log(max, min )
 		mesh.geometry.verticesNeedUpdate = true
 	}
 }

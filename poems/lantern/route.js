@@ -16,7 +16,8 @@ module.exports = function() {
 			PoemTemplate({
 				title : "Lantern | Living Light",
 				script : "/lantern/bundle.js",
-				version : 1
+				version : 1,
+				websiteUrl : process.env.WEBSITE_URL
 			})
 		)
 	})

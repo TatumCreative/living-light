@@ -6,7 +6,6 @@ var UiController    = require('./ui-controller')
 
 ;(function createPoem() {
 	
-	console.log('hello')
 	ManifestToPoem.init( CreatePoem, { poem: Manifest } )
 	// ManifestToPoem.load( "poem" )
 	var websockets = StartWebSockets()

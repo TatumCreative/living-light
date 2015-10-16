@@ -7,7 +7,7 @@ function _sendFn( names, sockets, unresolvedRequests, callback ) {
 	
 	return function send( dataToSend, replyBack ) {
 
-		console.log("RelayRequest: send()")
+		console.log("relay-request: send message")
 		var requestId = Uuid.v4()
 		
 		new Promise((resolve, reject) => {
@@ -56,7 +56,7 @@ function _receiveFn( unresolvedRequests ) {
 		
 			unresolvedRequests.splice( unresolvedRequests.indexOf( request ), 1)
 			request.resolve( response.data )
-			console.log("RelayRequest: receive() resolving request")
+			console.log("relay-request: receive() resolving request")
 		}
 	}
 }

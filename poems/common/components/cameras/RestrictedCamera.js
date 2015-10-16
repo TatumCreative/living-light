@@ -157,7 +157,6 @@ var internals = {
 	},
 	
 	rotateAll : function( state, xyz ) {
-		console.log('hello')
 		state.mouseRotation.set(0,0,0)
 		state.rotation.setFromVector3( xyz )
 		state.cameraQuaternion.setFromEuler( state.rotation )

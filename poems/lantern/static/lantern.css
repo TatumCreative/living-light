@@ -1,3 +1,12 @@
+html, body {
+	height:100%;
+	position:relative;
+}	
+#container, #container-blocker {
+	position:absolute;
+	width:100%;
+	height:100%;
+}
 .titles {
 	position: absolute;
 	top:0;
@@ -21,126 +30,8 @@
 	font-size:1.6em;
 	letter-spacing:0.2em;
 }
-.code-wrapper {
-	position: absolute;
-	bottom: 0;
-	left: 0;
-	margin: 2%;
-}
 @media (max-width:500px) {
 	.titles {
 		font-size:0.9em;
 	}
-	.code-wrapper {
-		font-size:0.9em;
-	}
-}
-.code-yours {
-	color: rgb(255, 255, 255);
-	border: 0.5em solid rgb(0, 113, 175);
-	border-radius: 50%;
-	width: 7em;
-	height: 7em;
-	float:left;
-	position:relative;
-	background-color:#000;
-}
-.cta-link {
-	position: absolute;
-	bottom:0;
-	right:0;
-}
-.code-yours-inner {
-	position: absolute;
-	height: 94%;
-	width: 94%;
-	border-radius: 50%;
-	margin: 3%;
-	border: 0.2em solid rgb(5, 123, 204);
-	text-align: center;
-}
-.code-yours-number {
-	font-weight: 800;
-	font-size: 2em;
-	margin-top: 0.4em;
-	position: relative;
-	color: #30f8ff;
-}
-.cta-link {
-	text-transform:uppercase;
-	font-size:2.25em;
-	color: #d979ff;
-	margin:2%;
-}
-.cta-link a {
-	color: #a879ff;
-	text-decoration:none;
-	font-weight:100;
-}
-.code-poem {
-	background-color: #004b70;
-	color:#fff;
-	float:left;
-	border-radius:0 50% 50% 0;
-	margin:0.5em 0 0 0;
-}
-.code-poem-inner {
-	width:5em;
-	height:5em;
-	background-color:#003449;
-	margin:0.5em;
-	border-radius:50%;
-	float:left;
-	text-align:center;
-	overflow:hidden;
-	box-shadow: inset 0.2em 0.3em 0.4em rgba(0,0,0,0.3);
-	transition: background-color 500ms;
-}
-.code-poem-number {
-    font-weight: 800;
-    font-size: 2em;
-    margin-top: 0.4em;
-    position: relative;
-    color: #30F8FF;
-	background:none;
-	border:none;
-	text-align:center;
-	width:2.5em;
-	font-family:'Roboto';
-}
-.code-poem-subtext, .code-yours-subtext {
-    color: #30F8FF;
-	font-weight:100;
-	text-transform: uppercase;
-	font-size:0.8em;
-	letter-spacing: 0.15em;
-}
-.code-status {
-	float:left;
-	height:6em;
-	background-color: #004b70;
-	color:#0071af;
-	margin-top:0.5em;
-	margin-left:-3em;
-	padding-left:3.5em;
-	padding-right:1em;
-	padding-top:2.3em;
-}
-.code-status:after {
-	content:"";
-	position:absolute;
-	width:1em;
-	height:1em;
-	border:0.25em solid #0071af;
-	border-left:none;
-	border-bottom:none;
-	transform: rotate(45deg);
-	margin-top:0.1em;
-}
-.code-poem-inner.connected {
-	background-color: rgb(48, 248, 255);
-}
-.code-poem-inner.connected .code-poem-number,
-.code-poem-inner.connected .code-poem-subtext {
-	color: #333;
 }

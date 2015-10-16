@@ -11,6 +11,7 @@
     "watch:spawning": "./bin/watchify-poem.sh spawning-pool",
     "build:lantern": "./bin/browserify-poem.sh lantern",
     "watch:lantern": "./bin/watchify-poem.sh lantern",
+    "build": "npm run build:spawning && npm run build:lantern",
     "watch": "parallelshell 'npm run start:dev' 'npm run watch:spawning' 'npm run watch:lantern' 'node-inspector'"
   },
   "author": "Greg Tatum",
@@ -28,8 +29,11 @@
     "uuid": "^2.0.1"
   },
   "devDependencies": {
+    "@tatumcreative/on-tap": "^1.1.0",
+    "exorcist": "^0.4.0",
     "parallelshell": "^2.0.0",
     "poem-loop": "^1.1.0",
-    "poem-manifests": "^1.2.4"
+    "poem-manifests": "^1.2.4",
+    "uglifyify": "^3.0.1"
   }
 }
