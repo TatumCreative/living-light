@@ -6,7 +6,7 @@ var StartWebSockets = require('../common/websockets')
 ;(function createPoem() {
 
 	ManifestToPoem.init( CreatePoem, { poem: Manifest } )
-	// ManifestToPoem.load( "poem" )
+	ManifestToPoem.load( "poem" )
 	StartWebSockets()
 
 })()

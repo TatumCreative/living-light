@@ -56,7 +56,11 @@ module.exports = function setupClientIOConnection() {
 		connectionRequestSent : false
 	})
 	
-	_setSocketEvents( socket, state )
+	_.defer(function() {
+		console.log('deferred start')
+		console.log(state)
+		_setSocketEvents( socket, state )
+	})
 	
 	return {
 		state : state,

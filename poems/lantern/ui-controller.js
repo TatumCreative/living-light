@@ -11,6 +11,9 @@ function _numbersOnly( text ) {
 function _manageCodeInput( $input, $status, state, onTypeInCompleteCode ) {
 	
 	$input.on('focus', function() {
+		
+		$input.select()
+		 
 		if( $input.val() === "..." ) {
 			$input.val('')
 		}
@@ -46,7 +49,9 @@ function _manageCodeInput( $input, $status, state, onTypeInCompleteCode ) {
 			}
 		}
 		
-		$input.val(currText)
+		if( currText !== $input.val() ) {
+			$input.val(currText)
+		}
 		prevText = currText
 		
 	})
@@ -67,7 +72,7 @@ function _onTypeInCompleteCode( socket, $codeInput, $status, state ) {
 				if( _.isString( connectedToCode ) ) {
 					
 					console.log('Connecting to poem', connectedToCode)
-					
+					$('.code-poem-number').blur()
 					state.set('theirCode', connectedToCode)
 				}
 			}
@@ -95,8 +100,9 @@ function _updateStatusMessageFn() {
 			
 				if( current.theirCode !== null ) {
 					$status.text( "Connected" )
+					fullyConnected = true
 				} else {
-					$status.text( "Type Connection Code Here" )
+					$status.text( "Type Code Here" )
 				}
 			} else {
 				$status.text( "Connecting" )
@@ -122,11 +128,7 @@ module.exports = function lanternUiController( socket, state ) {
 	var $codeInput = $('.code-poem-number')
 	var $status = $('.code-status')
 	
-	// state.on('change', _updateStatusMessageFn())
-	state.emitter.on('change', function() {
-		console.log('change')
-	})
-
+	state.on('changed', _updateStatusMessageFn())
 	
 	var onTypeInCompleteCode = _onTypeInCompleteCode(
 		socket,
