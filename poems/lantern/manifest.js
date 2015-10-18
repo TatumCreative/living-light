@@ -9,6 +9,7 @@ module.exports = {
 		}
 	},
 	components : {
+		websockets : { function : require('../common/websockets') },
 		renderer : { function : require('../common/renderers/basic-renderer') },
 		controls : { construct: require("../common/components/cameras/Controls") },
 		mouse : { function: require('../common/components/hids/mouse-tracker')	},

@@ -1,7 +1,7 @@
 var TAU = Math.PI * 2
-var SimplexNoise = require('simplex-noise')
+var Update = require('./update')
 
-function _randomSphericalCoordinate( radius ) {
+function _randomSphericalCoordinate( radius, spawnPoint ) {
 
 	// Randomize using spherical coordinates
 	// https://en.wikipedia.org/wiki/Spherical_coordinate_system
@@ -10,17 +10,28 @@ function _randomSphericalCoordinate( radius ) {
 	var phi    = _.random( TAU, true )
 	var radius = _.random( radius, true )
 	
+	if( spawnPoint ) {
+		var x = spawnPoint.x
+		var y = spawnPoint.y
+		var z = spawnPoint.z
+	} else {
+		var x = 0
+		var y = 0
+		var z = 0
+	}
+	
 	return new THREE.Vector3(
-		radius * Math.sin( theta ) * Math.cos( phi ),
-		radius * Math.sin( theta ) * Math.sin( phi ),
-		radius * Math.cos( theta )
+		x + radius * Math.sin( theta ) * Math.cos( phi ),
+		y + radius * Math.sin( theta ) * Math.sin( phi ),
+		z + radius * Math.cos( theta )
 	)
 }
 
-function _createEntity( config ) {
-
-	var position  = _randomSphericalCoordinate( config.radius )
+function _createEntity( config, spawnPoint ) {
+	
+	var position  = _randomSphericalCoordinate( config.radius, spawnPoint )
 	var direction = _randomSphericalCoordinate( 1 )
+	var age       = Date.now()
 	
 	var points = _.times( config.trailCount, function createInitialPointsTrail( i ) {
 		//Create a points trail
@@ -32,10 +43,10 @@ function _createEntity( config ) {
 		)
 	})
 	
-	var hue = Math.random() * 0.3 + 0.5
+	var hue = (age / 100000) % 1
 	var colors = _.times( config.trailCount, function( i ) {
 		var unitI = (i + 1) / (config.trailCount + 1)
-		return new THREE.Color().setHSL( hue, 1, config.brightness * (1 - unitI) )
+		return new THREE.Color().setHSL( hue, 0.9, config.brightness * (1 - unitI) )
 	})
 	
 	var veer = new THREE.Vector3(
@@ -49,18 +60,83 @@ function _createEntity( config ) {
 		direction : direction,
 		points : points,
 		colors : colors,
-		veer : veer
+		veer : veer,
+		age : age,
+		retrieved : false,
+		index : -1
 	}
 }
 
-function _addEntityToMesh( entity, mesh ) {
+function _manageEntitiesFn( config, mesh ) {
+	
+	var list = []
+	var takenIndices = []
+	var availableIndices = _.times( config.targetCount )
+	var offscreenVertex = new THREE.Vector3( 0, -10000, 0 )
+	
+	function add( entity ) {
+		
+		var index = availableIndices.pop()
+		var offset = index * config.trailCount
+		takenIndices.push( index )
+		list.push( entity )
+	
+		entity.points.forEach(function( point, i ) {
+			mesh.geometry.vertices[ offset + i ] = point
+		})
+	
+		entity.colors.forEach(function( color, i ) {
+			mesh.geometry.colors[ offset + i ] = color
+		})
+	
+		mesh.geometry.verticesNeedUpdate = true
+		mesh.geometry.colorsNeedUpdate = true
+	}
+	
+	function remove( entity ) {
+		
+		_remove( list, entity )
+		_remove( takenIndices, entity.index )
+		availableIndices.push( entity.index )
+		
+		var offset = entity.index * config.trailCount
+		
+		entity.points.forEach(function( point, i ) {
+			mesh.geometry.vertices[ offset + i ] = offscreenVertex
+		})
+	
+		entity.colors.forEach(function( color, i ) {
+			mesh.geometry.colors[ offset + i ] = offscreenVertex
+		})
+	
+		mesh.geometry.verticesNeedUpdate = true
+		mesh.geometry.colorsNeedUpdate = true
+		entity.index = -1
+	}
+
+	return {
+		add : add,
+		remove : remove,
+		list : list
+	}
+}
+
+function _remove( array, element ) {
+	
+	var index = array.indexOf( element )
+	if( index > 0 ) {
+		array.splice( index, 1 )
+	}
+}
+
+function _removeEntityFromMesh( entity, mesh ) {
 	
 	entity.points.forEach(function( point ) {
-		mesh.geometry.vertices.push( point )
+		_remove( mesh.geometry.vertices, point )
 	})
 	
 	entity.colors.forEach(function( color ) {
-		mesh.geometry.colors.push( color )
+		_remove( mesh.geometry.colors, color )
 	})
 	
 	mesh.geometry.verticesNeedUpdate = true
@@ -70,7 +146,12 @@ function _addEntityToMesh( entity, mesh ) {
 function _createMesh( config, ratio ) {
 	
 	var geometry = new THREE.Geometry()
-	geometry.dynamic = true
+	var count = config.targetCount * config.trailCount
+	
+	// Fill in blank vertices and colors for correct buffer sizes
+	geometry.vertices = _.times(count, _.constant( new THREE.Vector3(0,-10000,0) ) )
+	geometry.colors   = _.times(count, _.constant( new THREE.Color() ) )
+	geometry.dynamic  = true
 
 	var material = new THREE.PointsMaterial({
 		color: 0x888888,
@@ -85,112 +166,84 @@ function _createMesh( config, ratio ) {
 	return new THREE.Points( geometry, material )
 }
 
+function _repopulateEntitiesFn( config, mesh, entities ) {
+	
+	var spawnPoint = new THREE.Vector3( 0, -config.radius * 2, 0 )
+	
+	return function repopulateEntities() {
+		// 0 full, 1 empty
+		var unitPopulation = (config.targetCount - entities.list.length) / config.targetCount
+		
+		if( Math.random() < config.repopulateChance && Math.random() < unitPopulation ) {
+			entities.add(
+				_createEntity( config, spawnPoint )
+			)
+		}
+	}
+}
+
 function _updateFn( config, mesh, entities ) {
 
-	var avoidEdgeDirection = new THREE.Vector3(1,0,0)
-	var origin = new THREE.Vector3(0,0,0)
-	var radiusSq = config.radius * config.radius
-	
-	var simplexA = new SimplexNoise()
-	var simplexB = new SimplexNoise()
-	var max = 0
-	var min = 0
+	var avoidEdges = Update.avoidEdgesFn( config )
+	var randomlyTurn = Update.randomlyTurnFn( config )
+	var position = Update.positionFn( config )
+	var repopulateEntities = _repopulateEntitiesFn( config, mesh, entities )
 	
 	return function update( e ) {
 		
 		mesh.rotation.y += config.meshRotation
 		
-		for( var i=0; i < entities.length; i++ ) {
-			var entity = entities[i]
+		_.times( 10, repopulateEntities )
 
-			var theta = TAU * simplexA.noise4D(
-				config.simplexScale * entity.position.x,
-				config.simplexScale * entity.position.y,
-				config.simplexScale * entity.position.z,
-				0.0001 * e.elapsed
-			)
+		for( var i=0; i < entities.list.length; i++ ) {
+			var entity = entities.list[i]
+
+			randomlyTurn( entity, e.elapsed )
+			avoidEdges( entity )
+			position( entity )
 			
-			max = Math.max( theta, max )
-			min = Math.min( theta, min )
-			
-			var phi = TAU * simplexB.noise4D(
-				config.simplexScale * entity.position.x,
-				config.simplexScale * entity.position.y,
-				config.simplexScale * entity.position.z,
-				0.0001 * e.elapsed
-			)
-			
-			//----------------------------------------------
-			// Randomly turn the entities
-			entity.direction.x += entity.veer.x + config.turnSpeed * Math.sin( theta ) * Math.cos( phi )
-			entity.direction.y += entity.veer.y + config.turnSpeed * Math.sin( theta ) * Math.sin( phi )
-			entity.direction.z += entity.veer.z + config.turnSpeed * Math.cos( theta )
-			
-			entity.direction.normalize()
-			
-			//----------------------------------------------
-			// Avoid the edges
-			var distanceToOriginSq = entity.position.distanceToSquared( origin )
-			
-			avoidEdgeDirection
-				.copy( entity.position )
-				.normalize()
-				.multiplyScalar( - distanceToOriginSq / radiusSq * config.edgeAvoidanceWeight )
-			
-			entity.direction.add( avoidEdgeDirection ).normalize()
-			
-			//----------------------------------------------
-			// Apply the direction with the move speed
-			entity.position.x += config.moveSpeed * entity.direction.x
-			entity.position.y += config.moveSpeed * entity.direction.y
-			entity.position.z += config.moveSpeed * entity.direction.z
-			
-			//----------------------------------------------
-			// Move the first point
-			entity.points[0].copy( entity.position )
-			
-			//----------------------------------------------
-			// Follow the leader
-			for( var j=1; j < entity.points.length; j++ ) {
-				
-				var currPoint = entity.points[j]
-				var prevPoint = entity.points[j-1]
-				
-				currPoint.lerp( prevPoint, config.trailSpeed )
-				
-			}
 		}
+
 		mesh.geometry.verticesNeedUpdate = true
+		mesh.geometry.colorsNeedUpdate = true
+		
+		// if( mesh.geometry._bufferGeometry ) {
+		// 	mesh.geometry._bufferGeometry.setFromObject( mesh.geometry )
+		// }
 	}
+}
+
+function _createInitialEntities( config, entities ) {
+	
+	_.times( config.count, function() {
+		entities.add( _createEntity( config ) )
+	})
 }
 
 module.exports = function createLightEntities( app, props ) {
 	
 	var config = _.extend({
-		count : 5000,
-		radius : 200,
-		trailCount : 100,
-		trailDistance : 1,
-		moveSpeed : 1,
-		turnSpeed : 0.9,
-		trailSpeed : 0.5,
+		count               : 5000,
+		targetCount         : 5000,
+		count               : 1,
+		repopulateChance    : 0.5,
+		radius              : 200,
+		trailCount          : 100,
+		trailDistance       : 1,
+		moveSpeed           : 1,
+		turnSpeed           : 0.9,
+		trailSpeed          : 0.5,
 		edgeAvoidanceWeight : 0.5,
-		meshRotation : 0.001,
-		simplexScale : 0.005,
-		veerRange : 0.5,
-		brightness : 0.2,
-		size: 1.5
+		meshRotation        : 0.001,
+		simplexScale        : 0.005,
+		veerRange           : 0.5,
+		brightness          : 0.2,
+		size                : 1.5,
 	}, props)
 	
-	var entities = _.times( config.count, function() {
-		return _createEntity(config)
-	})
-	
 	var mesh = _createMesh( config, app.ratio )
-	
-	entities.forEach(function( entity ) {
-		_addEntityToMesh( entity, mesh )
-	})
+	var entities = _manageEntitiesFn( config, mesh )
+	_createInitialEntities( config, entities )
 	
 	app.scene.add( mesh )
 	app.emitter.on('update', _updateFn( config, mesh, entities ) )
