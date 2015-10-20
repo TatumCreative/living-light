@@ -159,7 +159,7 @@ function _updateStatusMessageFn() {
 					$status.text( "Connected" )
 					fullyConnected = true
 				} else {
-					$status.text( "Type Code Here" )
+					$status.text( "Type Code" )
 				}
 			} else {
 				$status.text( "Connecting" )

@@ -14,6 +14,5 @@ module.exports = {
 		controls : { construct: require("../common/components/cameras/Controls") },
 		mouse : { function: require('../common/components/hids/mouse-tracker')	},
 		entities : { function: require('./light-entities/light-entities') },
-		handleTap : { function: require('./light-entities/handle-tap') },
 	}
 }

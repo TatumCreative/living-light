@@ -71,3 +71,42 @@ exports.positionFn = function( config ) {
 		}
 	}
 }
+
+exports.seekRetrievalFn = function( config, entities, camera, sendEntity ) {
+	
+	var direction = new THREE.Vector3()
+	var target = new THREE.Vector3()
+	var raycaster = new THREE.Raycaster()
+	raycaster.setFromCamera( new THREE.Vector2(-0.5,-0.5), camera )
+	
+	target.copy( raycaster.ray.direction )
+		.multiplyScalar( 2 )
+		.add( camera.position )
+	
+	var moveEntity = new THREE.Vector3()
+	
+	return function seekRetrieval( entity ) {
+		
+		direction
+			.copy( target )
+			.sub( entity.position )
+		
+		var distanceSq = direction.lengthSq()
+		
+		direction.normalize()
+		
+		entity.direction.lerp( direction, 0.01 )
+		direction.lerp( direction, 0.05 )
+		
+		moveEntity.copy( direction ).multiplyScalar( 2 )
+		
+		entity.position.add( moveEntity )
+		
+		if( distanceSq < 50 ) {
+			sendEntity( entity )
+			entities.remove( entity )
+			entity.seekRetrieval = false
+			return true
+		}
+	}
+}

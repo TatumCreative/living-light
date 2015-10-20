@@ -11,7 +11,9 @@ module.exports = function lanternUiController( socket, state ) {
 				y : e.y / window.innerHeight,
 			}
 			
-			socket.emit('message', data)
+			socket.emit('message', data, function( response ) {
+				console.log('got a response', response)
+			})
 			console.log('sending message', data)
 		}
 	})

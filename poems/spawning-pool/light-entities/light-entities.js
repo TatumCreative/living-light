@@ -1,36 +1,11 @@
-var TAU = Math.PI * 2
 var Update = require('./update')
-
-function _randomSphericalCoordinate( radius, spawnPoint ) {
-
-	// Randomize using spherical coordinates
-	// https://en.wikipedia.org/wiki/Spherical_coordinate_system
-
-	var theta  = _.random( TAU, true )
-	var phi    = _.random( TAU, true )
-	var radius = _.random( radius, true )
-	
-	if( spawnPoint ) {
-		var x = spawnPoint.x
-		var y = spawnPoint.y
-		var z = spawnPoint.z
-	} else {
-		var x = 0
-		var y = 0
-		var z = 0
-	}
-	
-	return new THREE.Vector3(
-		x + radius * Math.sin( theta ) * Math.cos( phi ),
-		y + radius * Math.sin( theta ) * Math.sin( phi ),
-		z + radius * Math.cos( theta )
-	)
-}
+var RelayResponseFn = require('../../common/utils/relay-response')
+var Utils = require('./utils')
 
 function _createEntity( config, spawnPoint ) {
 	
-	var position  = _randomSphericalCoordinate( config.radius, spawnPoint )
-	var direction = _randomSphericalCoordinate( 1 )
+	var position  = Utils.randomSphericalCoordinate( config.radius, spawnPoint )
+	var direction = Utils.randomSphericalCoordinate( 1 )
 	var age       = Date.now()
 	
 	var points = _.times( config.trailCount, function createInitialPointsTrail( i ) {
@@ -43,7 +18,7 @@ function _createEntity( config, spawnPoint ) {
 		)
 	})
 	
-	var hue = (age / 100000) % 1
+	var hue = (age * config.hueShiftSpeed) % 1
 	var colors = _.times( config.trailCount, function( i ) {
 		var unitI = (i + 1) / (config.trailCount + 1)
 		return new THREE.Color().setHSL( hue, 0.9, config.brightness * (1 - unitI) )
@@ -62,8 +37,9 @@ function _createEntity( config, spawnPoint ) {
 		colors : colors,
 		veer : veer,
 		age : age,
-		retrieved : false,
-		index : -1
+		seekRetrieval : false,
+		index : -1,
+		response : null,
 	}
 }
 
@@ -80,7 +56,7 @@ function _manageEntitiesFn( config, mesh ) {
 		var offset = index * config.trailCount
 		takenIndices.push( index )
 		list.push( entity )
-	
+		entity.index = index
 		entity.points.forEach(function( point, i ) {
 			mesh.geometry.vertices[ offset + i ] = point
 		})
@@ -95,8 +71,8 @@ function _manageEntitiesFn( config, mesh ) {
 	
 	function remove( entity ) {
 		
-		_remove( list, entity )
-		_remove( takenIndices, entity.index )
+		Utils.remove( list, entity )
+		Utils.remove( takenIndices, entity.index )
 		availableIndices.push( entity.index )
 		
 		var offset = entity.index * config.trailCount
@@ -121,29 +97,21 @@ function _manageEntitiesFn( config, mesh ) {
 	}
 }
 
-function _remove( array, element ) {
-	
-	var index = array.indexOf( element )
-	if( index > 0 ) {
-		array.splice( index, 1 )
-	}
-}
-
 function _removeEntityFromMesh( entity, mesh ) {
 	
 	entity.points.forEach(function( point ) {
-		_remove( mesh.geometry.vertices, point )
+		Utils.remove( mesh.geometry.vertices, point )
 	})
 	
 	entity.colors.forEach(function( color ) {
-		_remove( mesh.geometry.colors, color )
+		Utils.remove( mesh.geometry.colors, color )
 	})
 	
 	mesh.geometry.verticesNeedUpdate = true
 	mesh.geometry.colorsNeedUpdate = true
 }
 
-function _createMesh( config, ratio ) {
+function _createMesh( config, ratio, scene ) {
 	
 	var geometry = new THREE.Geometry()
 	var count = config.targetCount * config.trailCount
@@ -163,7 +131,10 @@ function _createMesh( config, ratio ) {
 		fog: false
 	})
 	
-	return new THREE.Points( geometry, material )
+	var mesh = new THREE.Points( geometry, material )
+	scene.add( mesh )
+	
+	return mesh
 }
 
 function _repopulateEntitiesFn( config, mesh, entities ) {
@@ -182,35 +153,32 @@ function _repopulateEntitiesFn( config, mesh, entities ) {
 	}
 }
 
-function _updateFn( config, mesh, entities ) {
+function _sendEntityFn( socket, entities ) {
 
-	var avoidEdges = Update.avoidEdgesFn( config )
-	var randomlyTurn = Update.randomlyTurnFn( config )
-	var position = Update.positionFn( config )
-	var repopulateEntities = _repopulateEntitiesFn( config, mesh, entities )
-	
-	return function update( e ) {
+	return function sendEntity( entity ) {
 		
-		mesh.rotation.y += config.meshRotation
-		
-		_.times( 10, repopulateEntities )
-
-		for( var i=0; i < entities.list.length; i++ ) {
-			var entity = entities.list[i]
-
-			randomlyTurn( entity, e.elapsed )
-			avoidEdges( entity )
-			position( entity )
-			
+		var data = {
+			color : entity.colors[0].getHex(),
+			age : entity.age
 		}
-
-		mesh.geometry.verticesNeedUpdate = true
-		mesh.geometry.colorsNeedUpdate = true
-		
-		// if( mesh.geometry._bufferGeometry ) {
-		// 	mesh.geometry._bufferGeometry.setFromObject( mesh.geometry )
-		// }
+		console.log('sending the response', data)
+		entity.response( data )
+		entity.response = null
 	}
+}
+
+function _handleEntityRequests( socket, entities ) {
+	
+	socket.on('message', function( event ) {
+		
+		var entity = _.find(entities.list, function( entity ) {
+			return !entity.seekRetrieval
+		})
+		
+		// The entity starts seeking the exit. Once it is found the response is sent
+		entity.response = RelayResponseFn( socket, event )
+		entity.seekRetrieval = true
+	})
 }
 
 function _createInitialEntities( config, entities ) {
@@ -218,6 +186,38 @@ function _createInitialEntities( config, entities ) {
 	_.times( config.count, function() {
 		entities.add( _createEntity( config ) )
 	})
+}
+
+function _updateFn( app, config, mesh, entities, sendEntity ) {
+
+	var avoidEdges         = Update.avoidEdgesFn( config )
+	var randomlyTurn       = Update.randomlyTurnFn( config )
+	var position           = Update.positionFn( config )
+	var seekRetrieval      = Update.seekRetrievalFn( config, entities, app.camera.object, sendEntity )
+	var repopulateEntities = _repopulateEntitiesFn( config, mesh, entities )
+
+	return function update( e ) {
+		
+		// mesh.rotation.y += config.meshRotation
+		
+		_.times( 10, repopulateEntities )
+
+		for( var i=0; i < entities.list.length; i++ ) {
+			var entity = entities.list[i]
+
+			if( entity.seekRetrieval ) {
+				var didRetrieve = seekRetrieval( entity )
+				if( didRetrieve ) {	i--	}
+				
+			} else {
+				randomlyTurn( entity, e.elapsed )
+				avoidEdges( entity )
+			}
+			position( entity )
+		}
+
+		mesh.geometry.verticesNeedUpdate = true
+	}
 }
 
 module.exports = function createLightEntities( app, props ) {
@@ -239,14 +239,18 @@ module.exports = function createLightEntities( app, props ) {
 		veerRange           : 0.5,
 		brightness          : 0.2,
 		size                : 1.5,
+		hueShiftSpeed       : 0.00001,
 	}, props)
 	
-	var mesh = _createMesh( config, app.ratio )
-	var entities = _manageEntitiesFn( config, mesh )
+	var socket     = app.websockets.socket
+	var mesh       = _createMesh( config, app.ratio, app.scene )
+	var entities   = _manageEntitiesFn( config, mesh )
+	var sendEntity = _sendEntityFn( socket, entities )
+	
+	_handleEntityRequests( socket, entities )
 	_createInitialEntities( config, entities )
 	
-	app.scene.add( mesh )
-	app.emitter.on('update', _updateFn( config, mesh, entities ) )
+	app.emitter.on('update', _updateFn( app, config, mesh, entities, sendEntity) )
 	
 	return mesh
 }
