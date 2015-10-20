@@ -56,7 +56,10 @@ function _receiveFn( unresolvedRequests ) {
 		
 			unresolvedRequests.splice( unresolvedRequests.indexOf( request ), 1)
 			request.resolve( response.data )
-			console.log("relay-request: receive() resolving request")
+			if( request.replyBack ) {
+				request.replyBack( response.data )
+			}
+			console.log("relay-request: receive() resolving request", response.data)
 		}
 	}
 }
@@ -75,13 +78,7 @@ module.exports = function createRelayRequest( requestName, fromSocket, toSocket,
 		to : toSocket
 	}
 	
-	var send = _sendFn(
-		names,
-		sockets,
-		unresolvedRequests,
-		callback
-	)
-	
+	var send = _sendFn( names, sockets, unresolvedRequests, callback )
 	var receive = _receiveFn( unresolvedRequests )
 	
 	sockets.from.on( names.request, send )
