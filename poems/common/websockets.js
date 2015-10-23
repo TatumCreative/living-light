@@ -3,10 +3,10 @@ var CurrentState = require('@tatumcreative/current-state')
 
 function _setSocketEvents( state, socket ) {
 	
+	var prevCode
+	
 	socket.on('connect', function() {
-		// console.log('connected')
-		
-		socket.emit("setPoem", state.get("myCode") )
+		socket.emit("setPoem", state.get("prevCode") )
 		state.set({
 			isConnected : true,
 			connectionRequestSent: true,
@@ -32,6 +32,7 @@ function _setSocketEvents( state, socket ) {
 	})
 	
 	socket.on("setPoem", function( code ) {
+		state.set("prevCode", code, true)
 		state.set("myCode", code)
 	})
 	
@@ -45,6 +46,8 @@ function _setSocketEvents( state, socket ) {
 }
 
 function _numbersOnly( text ) {
+	
+	if( !text ) { return "" }
 	
 	var digits = _.filter( text.split(''), function( digit ) {
 		var isNumber = /[$0-9^]/
@@ -107,11 +110,11 @@ function _handleCodeInput( state, socket ) {
 	
 	var $input = $('.code-poem-number')
 
-	$input.on('keyup', (function() {
+	$input.on('keyup', (function setupKeyupHandlers() {
 
 		var codeInputChanged = _codeInputChangedFn( state, socket, $input )
 		
-		return function handleCodeInputChange() {
+		var handleCodeInputChange = function() {
 		
 			var codeInInput = $input.val()
 			var code = codeInputChanged( codeInInput )
@@ -120,6 +123,11 @@ function _handleCodeInput( state, socket ) {
 				$input.val(code)
 			}
 		}
+		
+		// Recheck the input on connecting to a poem
+		socket.on('setPoem', handleCodeInputChange)
+		
+		return handleCodeInputChange
 	})())
 	
 	$input.on('focus', function handleCodeInputFocus() {
@@ -181,7 +189,7 @@ function _updateStatusMessageFn() {
 
 module.exports = function manageWebsocketConnection( socket, state ) {
 	
-	var socket = socket = io( window.location.host + "/io")
+	var socket = io( window.location.host + "/io")
 
 	var state = CurrentState({
 		isConnected : false,

@@ -1,11 +1,12 @@
 var Update = require('./update')
 var RelayResponseFn = require('../../common/utils/relay-response')
-var Utils = require('./utils')
+var RandomSpherical = require('random-spherical/object')( Math.random, THREE.Vector3 )
+var Remove = require('../../common/utils/remove')
 
 function _createEntity( config, spawnPoint ) {
 	
-	var position  = Utils.randomSphericalCoordinate( config.radius, spawnPoint )
-	var direction = Utils.randomSphericalCoordinate( 1 )
+	var position  = RandomSpherical( config.radius, spawnPoint )
+	var direction = RandomSpherical()
 	var age       = Date.now()
 	
 	var points = _.times( config.trailCount, function createInitialPointsTrail( i ) {
@@ -37,6 +38,7 @@ function _createEntity( config, spawnPoint ) {
 		colors : colors,
 		veer : veer,
 		age : age,
+		trailSpeed : config.trailSpeedNormal,
 		seekRetrieval : false,
 		index : -1,
 		response : null,
@@ -71,8 +73,8 @@ function _manageEntitiesFn( config, mesh ) {
 	
 	function remove( entity ) {
 		
-		Utils.remove( list, entity )
-		Utils.remove( takenIndices, entity.index )
+		Remove( list, entity )
+		Remove( takenIndices, entity.index )
 		availableIndices.push( entity.index )
 		
 		var offset = entity.index * config.trailCount
@@ -97,20 +99,6 @@ function _manageEntitiesFn( config, mesh ) {
 	}
 }
 
-function _removeEntityFromMesh( entity, mesh ) {
-	
-	entity.points.forEach(function( point ) {
-		Utils.remove( mesh.geometry.vertices, point )
-	})
-	
-	entity.colors.forEach(function( color ) {
-		Utils.remove( mesh.geometry.colors, color )
-	})
-	
-	mesh.geometry.verticesNeedUpdate = true
-	mesh.geometry.colorsNeedUpdate = true
-}
-
 function _createMesh( config, ratio, scene ) {
 	
 	var geometry = new THREE.Geometry()
@@ -132,6 +120,7 @@ function _createMesh( config, ratio, scene ) {
 	})
 	
 	var mesh = new THREE.Points( geometry, material )
+	mesh.frustumCulled = false
 	scene.add( mesh )
 	
 	return mesh
@@ -153,31 +142,53 @@ function _repopulateEntitiesFn( config, mesh, entities ) {
 	}
 }
 
-function _sendEntityFn( socket, entities ) {
-
-	return function sendEntity( entity ) {
+function _handleEntityRequests( config, socket, entities ) {
+	
+	function getEntitiesToSend() {
+		var entitiesToSend = []
+		var i = 0
 		
-		var data = {
-			color : entity.colors[0].getHex(),
-			age : entity.age
+		while( i++ < entities.list.length && entitiesToSend.length < config.entitiesToSend ) {
+			var entity = entities.list[i]
+			if( !entity.seekRetrieval ) {
+				entitiesToSend.push( entity )
+			}
 		}
-		console.log('sending the response', data)
-		entity.response( data )
-		entity.response = null
+		
+		return entitiesToSend
 	}
-}
-
-function _handleEntityRequests( socket, entities ) {
 	
 	socket.on('message', function( event ) {
 		
-		var entity = _.find(entities.list, function( entity ) {
-			return !entity.seekRetrieval
+		var entitiesToSend = getEntitiesToSend()
+		var responseData = entitiesToSend.map(function( entity ) {
+			return {
+				color : entity.colors[0].getHex(),
+				age : entity.age
+			}
 		})
 		
-		// The entity starts seeking the exit. Once it is found the response is sent
-		entity.response = RelayResponseFn( socket, event )
-		entity.seekRetrieval = true
+		Promise.all( entitiesToSend.map(function( entity ) {
+			return new Promise( function( resolve ) {
+				
+				// The entity starts seeking the exit. Once it is found the promise is resolved
+				entity.trailSpeed = config.trailSpeedSeeking
+				entity.seekRetrieval = true
+				
+				entity.retrievalDone = function retrievalDone() {
+					entities.remove( entity )
+					entity.trailSpeed = config.trailSpeedNormal
+					entity.retrievalDone = null
+					entity.seekRetrieval = false
+					resolve()
+				}
+			})
+		}))
+		.then( function() {
+			var respond = RelayResponseFn( socket, event )
+			// console.log('Responding with', responseData )
+			respond( responseData )
+		})
 	})
 }
 
@@ -188,12 +199,12 @@ function _createInitialEntities( config, entities ) {
 	})
 }
 
-function _updateFn( app, config, mesh, entities, sendEntity ) {
+function _updateFn( app, config, mesh, entities ) {
 
 	var avoidEdges         = Update.avoidEdgesFn( config )
 	var randomlyTurn       = Update.randomlyTurnFn( config )
 	var position           = Update.positionFn( config )
-	var seekRetrieval      = Update.seekRetrievalFn( config, entities, app.camera.object, sendEntity )
+	var seekRetrieval      = Update.seekRetrievalFn( config, entities, app.camera.object )
 	var repopulateEntities = _repopulateEntitiesFn( config, mesh, entities )
 
 	return function update( e ) {
@@ -232,7 +243,8 @@ module.exports = function createLightEntities( app, props ) {
 		trailDistance       : 1,
 		moveSpeed           : 1,
 		turnSpeed           : 0.9,
-		trailSpeed          : 0.5,
+		trailSpeedNormal    : 0.5,
+		trailSpeedSeeking   : 0.9,
 		edgeAvoidanceWeight : 0.5,
 		meshRotation        : 0.001,
 		simplexScale        : 0.005,
@@ -240,17 +252,17 @@ module.exports = function createLightEntities( app, props ) {
 		brightness          : 0.2,
 		size                : 1.5,
 		hueShiftSpeed       : 0.00001,
+		entitiesToSend      : 10,
 	}, props)
 	
 	var socket     = app.websockets.socket
 	var mesh       = _createMesh( config, app.ratio, app.scene )
 	var entities   = _manageEntitiesFn( config, mesh )
-	var sendEntity = _sendEntityFn( socket, entities )
 	
-	_handleEntityRequests( socket, entities )
+	_handleEntityRequests( config, socket, entities )
 	_createInitialEntities( config, entities )
 	
-	app.emitter.on('update', _updateFn( app, config, mesh, entities, sendEntity) )
+	app.emitter.on('update', _updateFn( app, config, mesh, entities ) )
 	
 	return mesh
 }

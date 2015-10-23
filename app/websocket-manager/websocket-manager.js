@@ -15,10 +15,9 @@ function _addLeadingZeros( number, digits ) {
 
 function _setPoemFn( socket, poemManager ) {
 
-	return function setPoem() {
-		
+	return function setPoem( code ) {
 		var poem = CreatePoem( socket )
-		var index = poemManager.addPoem( poem )
+		var index = poemManager.addPoem( poem, code )
 		poem.code = _addLeadingZeros( index, 3 )
 
 		socket.emit('setPoem', poem.code)

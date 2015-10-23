@@ -5,26 +5,37 @@ function _getPoemByCode( poems, code ) {
 	return poems[ parseInt( code, 10 ) ]	
 }
 
-function _addPoem( poems, poem ) {
+function _addPoem( poems, poem, codeToCheck ) {
 	
 	// Add a poem but ensure a unique poem code
+	var index
 	
-	var openIndices = (
-		poems
-		.map((poem, index) => {
-			return poem ? null : index
-		})
-		.filter((index) => {
-			return index !== null
-		})
-	)
+	//Try to connect to a specific code
+	if( codeToCheck ) {
+		
+		var code = parseInt(codeToCheck, 10)
+		if( code >= 0 && code < 1000 ) {
+			if( !poems[code] ) {
+				index = code
+			}
+		}
+	}
 	
-	var index = _.random( openIndices.length - 1 )
+	//If no index yet find a random open one
+	if( !index ) {
+		
+		var openIndices = (
+			poems
+			.map((poem, index) => {	return poem ? null : index })
+			.filter((index) => { return index !== null })
+		)
+	
+		index = _.random( openIndices.length - 1 )
+	}
 	
 	poems[index] = poem
 	
 	return index
-	
 }
 
 function _removePoem( poems, poem ) {

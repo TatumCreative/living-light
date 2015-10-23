@@ -1,6 +1,6 @@
 var TAU = Math.PI * 2
 
-exports.randomSphericalCoordinate = function( radius, spawnPoint ) {
+module.exports = function randomSphericalCoordinate( radius, spawnPoint ) {
 
 	// Randomize using spherical coordinates
 	// https://en.wikipedia.org/wiki/Spherical_coordinate_system
@@ -24,12 +24,4 @@ exports.randomSphericalCoordinate = function( radius, spawnPoint ) {
 		y + radius * Math.sin( theta ) * Math.sin( phi ),
 		z + radius * Math.cos( theta )
 	)
-}
-
-exports.remove = function( array, element ) {
-	
-	var index = array.indexOf( element )
-	if( index > 0 ) {
-		array.splice( index, 1 )
-	}
 }

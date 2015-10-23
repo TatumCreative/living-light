@@ -28,13 +28,14 @@
     "uuid": "^2.0.1"
   },
   "devDependencies": {
-    "@tatumcreative/current-state": "^1.0.1",
     "@tatumcreative/color": "^1.1.1",
+    "@tatumcreative/current-state": "^1.0.1",
     "@tatumcreative/on-tap": "^1.1.0",
     "exorcist": "^0.4.0",
     "parallelshell": "^2.0.0",
     "poem-loop": "^1.1.0",
     "poem-manifests": "^1.2.4",
+    "random-spherical": "^1.0.3",
     "uglifyify": "^3.0.1"
   }
 }

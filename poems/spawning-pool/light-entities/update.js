@@ -67,12 +67,12 @@ exports.positionFn = function( config ) {
 			var currPoint = entity.points[j]
 			var prevPoint = entity.points[j-1]
 	
-			currPoint.lerp( prevPoint, config.trailSpeed )
+			currPoint.lerp( prevPoint, entity.trailSpeed )
 		}
 	}
 }
 
-exports.seekRetrievalFn = function( config, entities, camera, sendEntity ) {
+exports.seekRetrievalFn = function( config, entities, camera ) {
 	
 	var direction = new THREE.Vector3()
 	var target = new THREE.Vector3()
@@ -103,9 +103,7 @@ exports.seekRetrievalFn = function( config, entities, camera, sendEntity ) {
 		entity.position.add( moveEntity )
 		
 		if( distanceSq < 50 ) {
-			sendEntity( entity )
-			entities.remove( entity )
-			entity.seekRetrieval = false
+			entity.retrievalDone()
 			return true
 		}
 	}

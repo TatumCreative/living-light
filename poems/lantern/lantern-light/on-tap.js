@@ -1,6 +1,9 @@
 var OnTap = require('@tatumcreative/on-tap')
 
-module.exports = function lanternUiController( socket, state ) {
+module.exports = function lanternOnTap( app ) {
+	
+	var socket = app.websockets.socket
+	var state = app.websockets.state
 	
 	OnTap( document.getElementById('container-blocker'), function(e) {
 		
