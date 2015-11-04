@@ -4,9 +4,10 @@
 	<title>{{title}}</title>
 
 	<link href='http://fonts.googleapis.com/css?family=Roboto:400,500,700,300,100' rel='stylesheet' type='text/css' />
-	<link href='/common/css/poem-base.css?v={{version}}' rel='stylesheet' type='text/css' />
-	<link href='/common/css/poem-code.css?v={{version}}' rel='stylesheet' type='text/css' />
+	<link href='common/css/poem-base.css?v={{version}}' rel='stylesheet' type='text/css' />
+	<link href='common/css/poem-code.css?v={{version}}' rel='stylesheet' type='text/css' />
 	<link href='lantern.css?v={{version}}' rel='stylesheet' type='text/css' />
+	{{#if baseHref}}<base href='{{baseHref}}' />{{/if}}
 
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	{{#if screenshot}}<meta property="og:image" content="{{screenshot}}" />{{/if}}
@@ -60,12 +61,12 @@
 		
 	</div>
 
-	<script src="/socket.io/socket.io.js"></script>
-	<script src='/common/vendor/jquery-2.1.1.min.js'></script>
-	<script src='/common/vendor/three.js'></script>
-	<script src='/common/vendor/lodash.min.js'></script>
+	<script src='{{socketIoUrl}}'></script>
+	<script src='common/vendor/jquery-2.1.1.min.js'></script>
+	<script src='common/vendor/three.js'></script>
+	<script src='common/vendor/lodash.min.js'></script>
 	
-	<!-- Looking for the source code? Check it out here: https://github.com/TatumCreative/living-light -->
+	<script src='lantern.js'></script>
 	{{#if script}}<script src='{{script}}'></script>{{/if}}
 	
 </body>

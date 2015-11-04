@@ -4,6 +4,7 @@
   "description": "",
   "main": "app/server/index.js",
   "scripts": {
+    "postinstall" : "npm run build:living-light-client",
     "start": "node --harmony app/server",
     "start:dev": "nodemon --debug --harmony -e js,hbs app/server",
     "open:inspector": "open http://127.0.0.1:8080/debug?ws=127.0.0.1:8080&port=5858",
@@ -12,7 +13,8 @@
     "build:lantern": "./bin/browserify-poem.sh lantern",
     "watch:lantern": "./bin/watchify-poem.sh lantern",
     "build": "npm run build:spawning && npm run build:lantern",
-    "dev": "parallelshell 'npm run start:dev' 'npm run watch:spawning' 'npm run watch:lantern' 'node-inspector'"
+    "dev": "parallelshell 'npm run start:dev' 'npm run watch:spawning' 'npm run watch:lantern' 'node-inspector'",
+    "build:living-light-client": "node ./poems/lantern/build.js"
   },
   "author": "Greg Tatum",
   "license": "GPLv3",
@@ -31,11 +33,13 @@
     "@tatumcreative/color": "^1.1.1",
     "@tatumcreative/current-state": "^1.0.1",
     "@tatumcreative/on-tap": "^1.1.0",
+    "archiver": "^0.16.0",
     "exorcist": "^0.4.0",
     "parallelshell": "^2.0.0",
     "poem-loop": "^1.1.0",
     "poem-manifests": "^1.2.4",
     "random-spherical": "^1.0.3",
+    "rimraf": "^2.4.3",
     "uglifyify": "^3.0.1"
   }
 }

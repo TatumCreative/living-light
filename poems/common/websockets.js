@@ -189,7 +189,7 @@ function _updateStatusMessageFn() {
 
 module.exports = function manageWebsocketConnection( socket, state ) {
 	
-	var socket = io( window.location.host + "/io")
+	var socket = io( window.WEBSITE_URL + "/io")
 
 	var state = CurrentState({
 		isConnected : false,

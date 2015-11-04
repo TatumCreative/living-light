@@ -10,6 +10,7 @@ var Dotenv = require('dotenv')
 	var app = Express()
 	app.locals.env = process.env
 	
+	app.set('strict routing', true);
 	
 	//Configure view engine
 	require('./config/view-engine')( app )
@@ -22,9 +23,6 @@ var Dotenv = require('dotenv')
 	server.listen(port, function() {
 		console.log('Living light server listening at: ' + process.env.WEBSITE_URL)
 	})
-
-	//Configure statics
-	app.use(Express.static(process.cwd() + '/static'))
 
 	//Configure routes
 	require('../routes/routes')( app, io )

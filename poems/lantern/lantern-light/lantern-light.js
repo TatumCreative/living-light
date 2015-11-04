@@ -175,26 +175,20 @@ function _addFingerPressFn( app, config ) {
 	}
 }
 
-function _updateFn( config, entities, mesh ) {
-	
-	var verts = mesh.geometry.vertices
-	var origin = new THREE.Vector3()
-	var toOrigin = new THREE.Vector3()
+function _updateFn( config, entities, mesh, lantern ) {
 	
 	return function update() {
 		
 		for( var i=0; i < entities.list.length; i++ ) {
 			
 			var entity = entities.list[i]
-			var position = entity.position
-			var direction = entity.direction
 			
-			toOrigin.copy( origin ).sub( position ).normalize()
-			direction.lerp( toOrigin, 0.01 ).normalize()
-			
-			position.x += direction.x * config.speed
-			position.y += direction.y * config.speed
-			position.z += direction.z * config.speed
+			lantern.updateLight(
+				entity.position,
+				entity.direction,
+				entity.color,
+				entity.age
+			)
 		}
 		mesh.geometry.verticesNeedUpdate = true
 	}
@@ -211,7 +205,9 @@ module.exports = function lanternLight( app, props ) {
 	var mesh = _createMesh( config, app.ratio, app.scene )
 	var entities = _manageEntitiesFn( config, mesh )
 	
-	app.emitter.on( 'update', _updateFn( config, entities, mesh ) )
+	var lantern = new Lantern( app.scene, mesh )
+
+	app.emitter.on( 'update', _updateFn( config, entities, mesh, lantern ) )
 	var fingerPress = _addFingerPressFn( app, config )
 	
 	OnTap(

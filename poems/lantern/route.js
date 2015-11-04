@@ -8,7 +8,7 @@ module.exports = function() {
 	
 	var route = Express.Router()
 	
-	route.use(Express.static(__dirname + '/static'))
+	route.use( Express.static(__dirname + '/static') )
 	
 	route.get('/', function(request, response) {
 		
@@ -17,7 +17,9 @@ module.exports = function() {
 				title : "Lantern | Living Light",
 				script : "/lantern/bundle.js",
 				version : 1,
-				websiteUrl : process.env.WEBSITE_URL
+				websiteUrl : process.env.WEBSITE_URL,
+				baseHref : '/lantern/',
+				socketIoUrl : '../socket.io/socket.io.js',
 			})
 		)
 	})
