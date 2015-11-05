@@ -27,19 +27,19 @@
     "simplex-noise": "^2.2.0",
     "socket.io": "^1.3.6",
     "touches": "^1.2.0",
-    "uuid": "^2.0.1"
+    "uuid": "^2.0.1",
+    "archiver": "^0.16.0",
+    "rimraf": "^2.4.3"
   },
   "devDependencies": {
     "@tatumcreative/color": "^1.1.1",
     "@tatumcreative/current-state": "^1.0.1",
     "@tatumcreative/on-tap": "^1.1.0",
-    "archiver": "^0.16.0",
     "exorcist": "^0.4.0",
     "parallelshell": "^2.0.0",
     "poem-loop": "^1.1.0",
     "poem-manifests": "^1.2.4",
     "random-spherical": "^1.0.3",
-    "rimraf": "^2.4.3",
     "uglifyify": "^3.0.1"
   }
 }
