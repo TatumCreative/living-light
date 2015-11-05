@@ -52,11 +52,10 @@ function _ensureExists( path ) {
 	_copy( 'static/lantern.css',   _destination('lantern.css') )
 	_copy( 'static/lantern.js',    _destination('lantern.js') )
 	
-	_copy( '../../node_modules/socket.io/node_modules/socket.io-client/socket.io.js', _destination('common/vendor/socket.io.js') )
-	
 	_copy('../../static/common/css/poem-base.css', _destination('common/css/poem-base.css') )
 	_copy('../../static/common/css/poem-code.css', _destination('common/css/poem-code.css') )
 	
+	_copy('../../static/common/vendor/socket.io.js', _destination('/common/vendor/socket.io.js') )
 	_copy('../../static/common/vendor/jquery-2.1.1.min.js', _destination('/common/vendor/jquery-2.1.1.min.js') )
 	_copy('../../static/common/vendor/three.js', _destination('/common/vendor/three.js') )
 	_copy('../../static/common/vendor/lodash.min.js', _destination('/common/vendor/lodash.min.js') )
