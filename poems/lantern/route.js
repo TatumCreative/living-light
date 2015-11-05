@@ -20,6 +20,7 @@ module.exports = function() {
 				websiteUrl : process.env.WEBSITE_URL,
 				baseHref : '/lantern/',
 				socketIoUrl : '../socket.io/socket.io.js',
+				showAnalytics : true
 			})
 		)
 	})

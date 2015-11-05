@@ -1,6 +1,7 @@
-var OnTap = require('@tatumcreative/on-tap')
+var OnTap           = require('@tatumcreative/on-tap')
 var RandomSpherical = require('random-spherical/object')( Math.random, THREE.Vector3 )
-var Remove = require('../../common/utils/remove')
+var Remove          = require('../../common/utils/remove')
+var RelayResponseFn = require('../../common/utils/relay-response')
 
 function _createEntity( config, hex, spawnPoint ) {
 	
@@ -46,7 +47,7 @@ function _manageEntitiesFn( config, mesh ) {
 		Remove( takenIndices, entity.index )
 		availableIndices.push( entity.index )
 
-		mesh.geometry.vertices[ index ] = offscreenVertex
+		mesh.geometry.vertices[ entity.index ] = offscreenVertex
 		mesh.geometry.verticesNeedUpdate = true
 		entity.index = -1
 	}
@@ -85,7 +86,7 @@ function _createMesh( config, ratio, scene ) {
 	return mesh
 }
 
-function _tapFn( socket, state, config, mesh, entities, camera, fingerPress ) {
+function _tapFn( socket, state, config, mesh, entities, camera, fingerPress, lantern ) {
 
 	var raycaster = new THREE.Raycaster()
 	var mousePosition = new THREE.Vector2()
@@ -134,6 +135,8 @@ function _tapFn( socket, state, config, mesh, entities, camera, fingerPress ) {
 					entity.direction.normalize()
 					raycaster.ray.closestPointToPoint( mesh.position, entity.position )
 					entities.add( entity )
+					lantern.lightAdded( entity.position, entity.direction )
+					
 				})
 				
 				// console.log('got a response', incomingEntities)
@@ -157,6 +160,7 @@ function _addFingerPressFn( app, config ) {
 	geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI * 0.4 ) )
 	var material = new THREE.MeshBasicMaterial({color: 0x333333})
 	var scaleTarget = new THREE.Vector3(2,2,2)
+	
 	return function addFingerPress( position ) {
 		
 		var mesh = new THREE.Mesh( geometry, material )
@@ -194,6 +198,28 @@ function _updateFn( config, entities, mesh, lantern ) {
 	}
 }
 
+function _handleEntityRequests( config, socket, entities, lantern ) {
+	
+	socket.on('message', function( event ) {
+		
+		var respond = RelayResponseFn( socket, event )
+		var entity = _.sample( entities.list )
+		if( !entity ) {
+			respond([])
+			return
+		}
+		lantern.lightRemoved( entity.position, entity.direction )
+		entities.remove( entity )
+		responseData = [{
+			color : entity.color.getHex(),
+			age : entity.age
+		}]
+		
+		respond( responseData )
+		
+	})
+}
+
 module.exports = function lanternLight( app, props ) {
 	
 	var config = _.extend({
@@ -204,11 +230,11 @@ module.exports = function lanternLight( app, props ) {
 
 	var mesh = _createMesh( config, app.ratio, app.scene )
 	var entities = _manageEntitiesFn( config, mesh )
-	
 	var lantern = new Lantern( app.scene, mesh )
 
 	app.emitter.on( 'update', _updateFn( config, entities, mesh, lantern ) )
 	var fingerPress = _addFingerPressFn( app, config )
+	_handleEntityRequests( config, app.websockets.socket, entities, lantern )
 	
 	OnTap(
 		document.getElementById('container-blocker'),
@@ -219,7 +245,8 @@ module.exports = function lanternLight( app, props ) {
 			mesh,
 			entities,
 			app.camera.object,
-			fingerPress
+			fingerPress,
+			lantern
 		)
 	)
 }

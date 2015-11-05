@@ -3,11 +3,10 @@ var RelayResponseFn = require('../../common/utils/relay-response')
 var RandomSpherical = require('random-spherical/object')( Math.random, THREE.Vector3 )
 var Remove = require('../../common/utils/remove')
 
-function _createEntity( config, spawnPoint ) {
+function _createEntity( current, config, spawnPoint ) {
 	
 	var position  = RandomSpherical( config.radius, spawnPoint )
 	var direction = RandomSpherical()
-	var age       = Date.now()
 	
 	var points = _.times( config.trailCount, function createInitialPointsTrail( i ) {
 		//Create a points trail
@@ -19,7 +18,7 @@ function _createEntity( config, spawnPoint ) {
 		)
 	})
 	
-	var hue = (age * config.hueShiftSpeed) % 1
+	var hue = (current.uniqueEntityAge++ * config.hueShiftSpeed) % 1
 	var colors = _.times( config.trailCount, function( i ) {
 		var unitI = (i + 1) / (config.trailCount + 1)
 		return new THREE.Color().setHSL( hue, 0.9, config.brightness * (1 - unitI) )
@@ -37,7 +36,7 @@ function _createEntity( config, spawnPoint ) {
 		points : points,
 		colors : colors,
 		veer : veer,
-		age : age,
+		age : current.uniqueEntityAge,
 		trailSpeed : config.trailSpeedNormal,
 		seekRetrieval : false,
 		index : -1,
@@ -126,7 +125,7 @@ function _createMesh( config, ratio, scene ) {
 	return mesh
 }
 
-function _repopulateEntitiesFn( config, mesh, entities ) {
+function _repopulateEntitiesFn( current, config, mesh, entities ) {
 	
 	var spawnPoint = new THREE.Vector3( 0, -config.radius * 2, 0 )
 	
@@ -136,7 +135,7 @@ function _repopulateEntitiesFn( config, mesh, entities ) {
 		
 		if( Math.random() < config.repopulateChance && Math.random() < unitPopulation ) {
 			entities.add(
-				_createEntity( config, spawnPoint )
+				_createEntity( current, config, spawnPoint )
 			)
 		}
 	}
@@ -192,20 +191,20 @@ function _handleEntityRequests( config, socket, entities ) {
 	})
 }
 
-function _createInitialEntities( config, entities ) {
+function _createInitialEntities( current, config, entities ) {
 	
 	_.times( config.count, function() {
-		entities.add( _createEntity( config ) )
+		entities.add( _createEntity( current, config ) )
 	})
 }
 
-function _updateFn( app, config, mesh, entities ) {
+function _updateFn( current, app, config, mesh, entities ) {
 
 	var avoidEdges         = Update.avoidEdgesFn( config )
 	var randomlyTurn       = Update.randomlyTurnFn( config )
 	var position           = Update.positionFn( config )
 	var seekRetrieval      = Update.seekRetrievalFn( config, entities, app.camera.object )
-	var repopulateEntities = _repopulateEntitiesFn( config, mesh, entities )
+	var repopulateEntities = _repopulateEntitiesFn( current, config, mesh, entities )
 
 	return function update( e ) {
 		
@@ -251,18 +250,22 @@ module.exports = function createLightEntities( app, props ) {
 		veerRange           : 0.5,
 		brightness          : 0.2,
 		size                : 1.5,
-		hueShiftSpeed       : 0.00001,
+		hueShiftSpeed       : 0.00005,
 		entitiesToSend      : 10,
 	}, props)
+	
+	var current = {
+		uniqueEntityAge : _.random(0, 10000)
+	}
 	
 	var socket     = app.websockets.socket
 	var mesh       = _createMesh( config, app.ratio, app.scene )
 	var entities   = _manageEntitiesFn( config, mesh )
 	
 	_handleEntityRequests( config, socket, entities )
-	_createInitialEntities( config, entities )
+	_createInitialEntities( current, config, entities )
 	
-	app.emitter.on('update', _updateFn( app, config, mesh, entities ) )
+	app.emitter.on('update', _updateFn( current, app, config, mesh, entities ) )
 	
 	return mesh
 }
