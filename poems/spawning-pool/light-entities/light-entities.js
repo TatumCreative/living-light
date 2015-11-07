@@ -250,7 +250,7 @@ module.exports = function createLightEntities( app, props ) {
 		veerRange           : 0.5,
 		brightness          : 0.2,
 		size                : 1.5,
-		hueShiftSpeed       : 0.00005,
+		hueShiftSpeed       : 0.00008,
 		entitiesToSend      : 10,
 	}, props)
 	

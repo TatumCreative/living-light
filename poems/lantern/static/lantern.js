@@ -16,7 +16,6 @@
 
 function Lantern( scene, mesh ) {
 
-	
 	this.scene = scene // The current three.js scene
 	
 	/*
@@ -47,6 +46,12 @@ function Lantern( scene, mesh ) {
 		moveSpeed : 1,
 		turnSpeed : 0.01
 	}
+	
+	/*
+		When hacking on this code change this value to start with some lights
+	*/
+	
+	this.lightsToStartWith = 0
 	
 }
 

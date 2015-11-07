@@ -236,6 +236,24 @@ function _handleMouseMovesFn( camera, lantern ) {
 	}
 }
 
+function _addInitialLights( config, entities, lantern ) {
+	
+	for( var i=0; i < lantern.lightsToStartWith; i++ ) {
+		
+		var entity = _createEntity( config, 0x009999, new THREE.Vector3() )
+		entity.position.set(
+			_.random(-100, 100, true),
+			_.random(-100, 100, true),
+			_.random(-100, 100, true)
+		)
+		entity.direction.set( Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5 )
+		entity.direction.normalize()
+	
+		entities.add( entity )
+		lantern.lightAdded( entity.position, entity.direction )
+	}	
+}
+
 module.exports = function lanternLight( app, props ) {
 	
 	var config = _.extend({
@@ -253,6 +271,8 @@ module.exports = function lanternLight( app, props ) {
 	_handleEntityRequests( config, app.websockets.socket, entities, lantern )
 	
 	$(window).on('mousemove', _handleMouseMovesFn( app.camera.object, lantern ))
+	
+	_addInitialLights( config, entities, lantern )
 	
 	OnTap(
 		document.getElementById('container-blocker'),
