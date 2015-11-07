@@ -220,6 +220,22 @@ function _handleEntityRequests( config, socket, entities, lantern ) {
 	})
 }
 
+function _handleMouseMovesFn( camera, lantern ) {
+	
+	var raycaster = new THREE.Raycaster()
+	var mousePosition = new THREE.Vector2()
+	var origin = new THREE.Vector3()
+
+	return function handleMouseMoves( e ) {
+
+		mousePosition.x = (e.pageX / window.innerWidth) * 2 - 1
+		mousePosition.y = 1 - (e.pageY / window.innerHeight) * 2
+		
+		raycaster.setFromCamera( mousePosition, camera )
+		raycaster.ray.closestPointToPoint( origin, lantern.mousePosition )			
+	}
+}
+
 module.exports = function lanternLight( app, props ) {
 	
 	var config = _.extend({
@@ -235,6 +251,8 @@ module.exports = function lanternLight( app, props ) {
 	app.emitter.on( 'update', _updateFn( config, entities, mesh, lantern ) )
 	var fingerPress = _addFingerPressFn( app, config )
 	_handleEntityRequests( config, app.websockets.socket, entities, lantern )
+	
+	$(window).on('mousemove', _handleMouseMovesFn( app.camera.object, lantern ))
 	
 	OnTap(
 		document.getElementById('container-blocker'),

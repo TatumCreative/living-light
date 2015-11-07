@@ -56,7 +56,6 @@ Lantern.prototype.updateLight = (function() {
 	var origin = new THREE.Vector3()
 	var toOrigin = new THREE.Vector3()
 	
-	
 	return function updateIndividualPieceOfLight( position, direction, color, age ) {
 		
 		/*
